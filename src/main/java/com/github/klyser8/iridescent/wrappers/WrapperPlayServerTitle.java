@@ -24,7 +24,7 @@ import com.comphenix.protocol.wrappers.EnumWrappers.TitleAction;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 
 public class WrapperPlayServerTitle extends AbstractPacket {
-	public static final PacketType TYPE = PacketType.Play.Server.TITLE;
+	public static final PacketType TYPE = PacketType.Play.Server.SET_TITLE_TEXT;
 
 	public WrapperPlayServerTitle() {
 		super(new PacketContainer(TYPE), TYPE);

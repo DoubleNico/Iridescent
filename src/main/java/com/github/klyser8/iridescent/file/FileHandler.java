@@ -23,7 +23,6 @@ public class FileHandler {
     private File colorsFile;
 
     private FileConfiguration lang;
-    private File langFile;
 
     public void setup() {
         List<String> languages = Arrays.asList("english", "italian", "spanish", "russian", "chinese", "portuguese");
@@ -68,7 +67,7 @@ public class FileHandler {
             case "portuguese": languageFile = "portuguese.yml";
                 break;
         }
-        langFile = new File(plugin.getDataFolder() + File.separator + "lang", languageFile);
+        File langFile = new File(plugin.getDataFolder() + File.separator + "lang", languageFile);
         lang = YamlConfiguration.loadConfiguration(langFile);
     }
 

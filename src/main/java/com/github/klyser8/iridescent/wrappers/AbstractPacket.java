@@ -20,6 +20,11 @@ package com.github.klyser8.iridescent.wrappers;
 
 import java.lang.reflect.InvocationTargetException;
 
+import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.BukkitConverters;
+import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketType;
@@ -111,4 +116,19 @@ public abstract class AbstractPacket {
 			throw new RuntimeException("Cannot receive packet.", e);
 		}
 	}
+
+	public StructureModifier<WrappedChatComponent> getChatComponents() {
+		return handle.getModifier().withType(getScoreboardTeam(), BukkitConverters.getWrappedChatComponentConverter());
+	}
+
+	private Class<?> getScoreboardTeam(){
+		return MinecraftReflection.getMinecraftClass("world.scores.ScoreboardTeam", "ScoreboardTeam");
+	}
+
+	public String getNMSVersion(){
+		String v = Bukkit.getServer().getClass().getPackage().getName();
+		return v.substring(v.lastIndexOf('.') + 1);
+	}
+
+
 }

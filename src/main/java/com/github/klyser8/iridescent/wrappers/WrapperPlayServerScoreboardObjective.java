@@ -22,6 +22,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.IntEnum;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import net.minecraft.network.protocol.game.PacketPlayOutScoreboardTeam;
 
 public class WrapperPlayServerScoreboardObjective extends AbstractPacket {
 	public static final PacketType TYPE =
@@ -72,7 +73,6 @@ public class WrapperPlayServerScoreboardObjective extends AbstractPacket {
 	public void setName(String value) {
 		handle.getStrings().write(0, value);
 	}
-
 	/**
 	 * Retrieve Objective DisplayName.
 	 * <p>

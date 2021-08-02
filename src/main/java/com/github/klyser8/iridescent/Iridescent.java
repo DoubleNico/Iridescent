@@ -26,9 +26,8 @@ import static com.github.klyser8.iridescent.api.ColorUtil.*;
 public final class Iridescent extends JavaPlugin {
 
     public static final String HEX_REGEX = "#[A-Fa-f0-9]{6}";
-    public static final String TAG_REGEX = "^[A-Za-z0-9_]{1,16}$";
+    public static final String TAG_REGEX = "^[A-Za-z0-9_]{1,17}$";
     public static final String RAW_HEX_REGEX = "<#[A-Fa-f0-9]{6}>";
-    private String rawTagRegex;
 
     private final SortedMap<String, String> colorMap;
     private final List<ColorSupporters> colorSupporters;
@@ -80,19 +79,20 @@ public final class Iridescent extends JavaPlugin {
                 @Override
                 public void onPacketSending(PacketEvent event) {
                     PacketContainer packet = event.getPacket();
-                    WrapperPlayServerScoreboardTeam wrapper = new WrapperPlayServerScoreboardTeam(packet);
+                        WrapperPlayServerScoreboardTeam wrapper = new WrapperPlayServerScoreboardTeam(packet);
+                        WrappedChatComponent component = wrapper.getDisplayName();
+                        if(component != null) {
+                            component.setJson(legacyToJson(colorMessage(event.getPlayer(), jsonToLegacy(component.getJson()), false)));
+                            wrapper.setDisplayName(component);
 
-                    WrappedChatComponent component = wrapper.getDisplayName();
-                    component.setJson(legacyToJson(colorMessage(event.getPlayer(), jsonToLegacy(component.getJson()), false)));
-                    wrapper.setDisplayName(component);
+                            component = wrapper.getPrefix();
+                            component.setJson(legacyToJson(colorMessage(event.getPlayer(), jsonToLegacy(component.getJson()), false)));
+                            wrapper.setPrefix(component);
 
-                    component = wrapper.getPrefix();
-                    component.setJson(legacyToJson(colorMessage(event.getPlayer(), jsonToLegacy(component.getJson()), false)));
-                    wrapper.setPrefix(component);
-
-                    component = wrapper.getSuffix();
-                    component.setJson(legacyToJson(colorMessage(event.getPlayer(), jsonToLegacy(component.getJson()), false)));
-                    wrapper.setSuffix(component);
+                            component = wrapper.getSuffix();
+                            component.setJson(legacyToJson(colorMessage(event.getPlayer(), jsonToLegacy(component.getJson()), false)));
+                            wrapper.setSuffix(component);
+                        }
                 }
             });
         }
@@ -116,11 +116,22 @@ public final class Iridescent extends JavaPlugin {
         }
 
         if (colorSupporters.contains(ColorSupporters.TITLE)) {
-            manager.addPacketListener(new PacketAdapter(this, ListenerPriority.HIGHEST, PacketType.Play.Server.TITLE) {
+            manager.addPacketListener(new PacketAdapter(this, ListenerPriority.HIGHEST, PacketType.Play.Server.SET_TITLE_TEXT) {
                 @Override
                 public void onPacketSending(PacketEvent event) {
                     PacketContainer packet = event.getPacket();
                     WrapperPlayServerTitle wrapper = new WrapperPlayServerTitle(packet);
+                    WrappedChatComponent component = wrapper.getTitle();
+                    if (component == null) return;
+                    component.setJson(legacyToJson(colorMessage(event.getPlayer(), jsonToLegacy(component.getJson()), false)));
+                    wrapper.setTitle(component);
+                }
+            });
+            manager.addPacketListener(new PacketAdapter(this, ListenerPriority.HIGHEST, PacketType.Play.Server.SET_SUBTITLE_TEXT) {
+                @Override
+                public void onPacketSending(PacketEvent event) {
+                    PacketContainer packet = event.getPacket();
+                    WrapperPlayServerSubTitle wrapper = new WrapperPlayServerSubTitle(packet);
                     WrappedChatComponent component = wrapper.getTitle();
                     if (component == null) return;
                     component.setJson(legacyToJson(colorMessage(event.getPlayer(), jsonToLegacy(component.getJson()), false)));
@@ -181,21 +192,6 @@ public final class Iridescent extends JavaPlugin {
                 }
             });
         }
-
-
-        /*manager.addPacketListener(new PacketAdapter(this, ListenerPriority.HIGHEST, PacketType.Play.Server.PLAYER_INFO) {
-            @Override
-            public void onPacketSending(PacketEvent event) {
-                PacketContainer packet = event.getPacket();
-                WrapperPlayServerPlayerInfo wrapper = new WrapperPlayServerPlayerInfo(packet);
-                List<PlayerInfoData> dataList = wrapper.getData();
-                System.out.println(dataList.size());
-                WrappedChatComponent displayName = dataList.get(0).getDisplayName();
-                displayName.setJson(coloredTextToJson(dataList.get(0).getDisplayName().getJson()));
-                List<PlayerInfoData> data = Collections.singletonList(new PlayerInfoData(dataList.get(0).getProfile(), dataList.get(0).getLatency(), dataList.get(0).getGameMode(), displayName));
-                wrapper.setData(data);
-            }
-        });*/
     }
 
     @Override
@@ -210,10 +206,11 @@ public final class Iridescent extends JavaPlugin {
         format = getConfig().getString("Tag Format");
         assert format != null;
         String[] splitFormat = format.split("\\{TAG}");
+        String rawTagRegex;
         if (splitFormat.length == 2)
-            rawTagRegex = "^" + splitFormat[0] + "[A-Za-z0-9_]{1,16}" + splitFormat[1] + "$";
+            rawTagRegex = "^" + splitFormat[0] + "[A-Za-z0-9_]{1,17}" + splitFormat[1] + "$";
         else
-            rawTagRegex = "^" + splitFormat[0] + "[A-Za-z0-9_]{1,16}$";
+            rawTagRegex = "^" + splitFormat[0] + "[A-Za-z0-9_]{1,17}$";
 
         if (debugLevel >= 1) getLogger().info("- [Debug Level]: " + debugLevel);
         if (isReload) {
@@ -227,7 +224,7 @@ public final class Iridescent extends JavaPlugin {
         for (String supporter : getConfig().getStringList("Color Support")) {
             colorSupporters.add(ColorSupporters.valueOf(supporter.toUpperCase()));
         }
-        if (debugLevel >= 1) getLogger().info("- [Color Supporters]: " + colorSupporters.toString());
+        if (debugLevel >= 1) getLogger().info("- [Color Supporters]: " + colorSupporters);
 
         ConfigurationSection section = fileHandler.getColors().getConfigurationSection("Color Tags");
         if (section == null) throw new NullPointerException();
@@ -250,7 +247,7 @@ public final class Iridescent extends JavaPlugin {
             colorMap.put(tag.toLowerCase(), "#" + color.toLowerCase());
         }
         colorPermissions = getConfig().getBoolean("Chat Permissions");
-        if (debugLevel >= 1) getLogger().info("- [Loaded Colors]: " + colorMap.keySet().toString());
+        if (debugLevel >= 1) getLogger().info("- [Loaded Colors]: " + colorMap.keySet());
     }
 
     public void saveTags() {
